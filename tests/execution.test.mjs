@@ -48,3 +48,32 @@ test('text CMP flags and TEST flags determine branches without changing operands
  m.step(); m.step(); assert.equal(m.cpu.registers.bx,0x7fff); assert.equal(m.cpu.registers.flags & (1|2048),1|2048);
  m.step(); m.step(); assert.equal(m.cpu.registers.flags & (1|2048),0); assert.equal(m.cpu.registers.flags & (64|4),64|4);
 });
+test('extension instruction edge flags, conditional branches, and unsupported forms',()=>{
+ const instruction = (program, registers={}) => { const m=new Machine({profile:'diagnostic-text-v1',program:Uint8Array.from(program),registers}); const outcome=m.step(); return {m,outcome}; };
+ // Increment overflow must not alter carry, and wrap must set zero and auxiliary carry.
+ for(const carry of [0,1]) {
+   let {m}=instruction([0x43],{bx:0x7fff,flags:2|carry});
+   assert.equal(m.cpu.registers.bx,0x8000); assert.equal(m.cpu.registers.flags & (1|2048|128|16),carry|2048|128|16);
+   ({m}=instruction([0x43],{bx:0xffff,flags:2|carry}));
+   assert.equal(m.cpu.registers.bx,0); assert.equal(m.cpu.registers.flags & (1|64|16|4),carry|64|16|4);
+ }
+ // Signed backward displacements use the IP after the displacement byte, with 16-bit wrap.
+ let {m}=instruction([0x74,0xfc],{flags:0x42}); assert.equal(m.cpu.registers.ip,0x7bfe);
+ ({m}=instruction([0x74,0xfc],{flags:2})); assert.equal(m.cpu.registers.ip,0x7c02);
+ ({m}=instruction([0x72,0xfc],{flags:3})); assert.equal(m.cpu.registers.ip,0x7bfe);
+ ({m}=instruction([0xeb,0xfc])); assert.equal(m.cpu.registers.ip,0x7bfe);
+ // Unsupported ModR/M variants cannot write memory, consume immediates, or advance IP.
+ for(const code of [[0x88,0x06],[0xc6,0x06,0x41],[0x81,0xfa,0x12,0x34]]) {
+   const {m:bad,outcome}=instruction(code,{bx:1,ax:0x41}); assert.equal(outcome.status,'unsupported-instruction');
+   assert.equal(bad.cpu.registers.ip,0x7c00); assert.equal(bad.bus.read8(1),0); assert.deepEqual(outcome.trace.bytes,code.slice(0,2));
+ }
+});
+test('IN preserves flags and upper accumulator; unmapped IN stops before changing registers',()=>{
+ const m=new Machine({profile:'diagnostic-text-v1',program:Uint8Array.of(0xe4,0x60,0xec),registers:{ax:0xbeef,dx:0x60,flags:0x8d7},setupBus:bus=>bus.registerPort(0x60,{read:()=>0x12})});
+ m.step(); assert.equal(m.cpu.registers.ax,0xbe12); assert.equal(m.cpu.registers.flags,0x8d7); m.step(); assert.equal(m.cpu.registers.ax,0xbe12);
+ const bad=new Machine({profile:'diagnostic-text-v1',program:Uint8Array.of(0xe4,0x61),registers:{ax:0xbeef}}); assert.equal(bad.step().status,'unsupported-platform-access'); assert.equal(bad.cpu.registers.ax,0xbeef); assert.equal(bad.cpu.registers.ip,0x7c00);
+});
+test('sequential IP and relative branches wrap after complete instructions',()=>{
+ const one=new Machine({profile:'diagnostic-text-v1',program:bytes,registers:{ip:0xffff}}); one.bus.write8(0xffff,0x43); assert.equal(one.step().status,'retired'); assert.equal(one.cpu.registers.ip,0);
+ const jump=new Machine({profile:'diagnostic-text-v1',program:bytes,registers:{ip:0xfffe}}); jump.bus.write8(0xfffe,0xeb); jump.bus.write8(0xffff,0xfe); assert.equal(jump.step().status,'retired'); assert.equal(jump.cpu.registers.ip,0xfffe);
+});
