@@ -1,8 +1,8 @@
 # Test plan and evidence boundaries
 
-## Available now
+## Foundation reference checks
 
-`node --test` exercises only `contracts/reference.mjs` and the diagnostic fixture:
+The original reference suite exercises `contracts/reference.mjs` and the diagnostic fixture:
 
 - width/input rejection, wrapping and signed interpretation at 8/16/32 bits;
 - ADD flags on independent edge vectors and exhaustive 8-bit sums against a
@@ -13,8 +13,10 @@
 - exact seven-byte original diagnostic and SHA-256, including mutation rejection.
 
 The reference BigInt arithmetic is deliberately simple, not the future hot path.
-There is no CPU, disk implementation, browser UI, BIOS or audio graph under test.
-The current CI job is named **foundation-contracts**, not emulator-conformance.
+The original seven checks remain unchanged. The current CI job is named
+**foundation-contracts**; it now also runs the added Node execution and device
+tests, but its name is not a claim of broad emulator conformance. See
+[SUPPORT.md](SUPPORT.md) for implementation and browser evidence boundaries.
 
 ## Required as implementation lands
 
