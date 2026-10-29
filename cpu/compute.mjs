@@ -32,22 +32,26 @@ export function stepCompute(cpu) {
   const trace={profile:cpu.profile,start,bytes};
   if(cpu.halted) return {status:'halted',retired:false,trace,reason:'CPU halted'};
   let cursor=r.ip, wrapped=false;
-  const segmented=cpu.profile==='diagnostic-segments-v1';
+  const resetProfile=cpu.profile==='i486-reset-v1';
+  const segmented=cpu.profile==='diagnostic-segments-v1'||resetProfile;
+  const codeAddress=off=>resetProfile ? (cpu.csBase + off) >>> 0 : bus.address(r.cs,off);
   let segmentOverride=null;
-  const fetch=()=>{if(wrapped)throw new PlatformAccess('instruction crosses the 16-bit code segment boundary');if(bytes.length>=15){if(segmented)throw new DecodeLimit('instruction exceeds 15-byte decoder limit');throw new Error('decoder budget exceeded');}const v=bus.read8(bus.address(r.cs,cursor));bytes.push(v);wrapped=cursor===0xffff;cursor=(cursor+1)&0xffff;return v;};
+  const fetch=()=>{if(wrapped)throw new PlatformAccess('instruction crosses the 16-bit code segment boundary');if(bytes.length>=15){if(segmented)throw new DecodeLimit('instruction exceeds 15-byte decoder limit');throw new Error('decoder budget exceeded');}const v=bus.read8(codeAddress(cursor));bytes.push(v);wrapped=cursor===0xffff;cursor=(cursor+1)&0xffff;return v;};
   const word=()=>{const lo=fetch();return lo|(fetch()<<8);};
   const signed8=x=>x<0x80?x:x-0x100;
   const signed16=x=>x<0x8000?x:x-0x10000;
   const unsupported=reason=>({status:'unsupported-instruction',retired:false,trace,reason});
   // Check both bytes before either read/write; offsets never wrap within a word.
-  function addresses(seg,off,width) {
+  function addresses(seg,off,width,write=false,code=false) {
     if(width===16 && off===0xffff)throw new PlatformAccess('word crosses the 16-bit segment boundary');
-    const a=bus.address(seg,off); bus.index(a);
+    const address=offset=>code ? codeAddress(offset) : bus.address(seg,offset);
+    const validate=write ? bus.writableIndex.bind(bus) : bus.index.bind(bus);
+    const a=address(off); validate(a);
     if(width===8)return [a];
-    const b=bus.address(seg,off+1);bus.index(b);return [a,b];
+    const b=address(off+1);validate(b);return [a,b];
   }
-  function readMem(seg,off,width) {const a=addresses(seg,off,width);const lo=bus.read8(a[0]);return width===8?lo:lo|(bus.read8(a[1])<<8);}
-  function writeMem(seg,off,width,value) {const a=addresses(seg,off,width);bus.write8(a[0],value&255);if(width===16)bus.write8(a[1],(value>>>8)&255);}
+  function readMem(seg,off,width,code=false) {const a=addresses(seg,off,width,false,code);const lo=bus.read8(a[0]);return width===8?lo:lo|(bus.read8(a[1])<<8);}
+  function writeMem(seg,off,width,value,code=false) {const a=addresses(seg,off,width,true,code);bus.write8(a[0],value&255);if(width===16)bus.write8(a[1],(value>>>8)&255);}
   function modrm(width) {
     const m=fetch(),mod=m>>>6,reg=(m>>>3)&7,rm=m&7;
     if(mod===3)return {reg,operand:{read:()=>getReg(r,rm,width),write:v=>setReg(r,rm,width,v)}};
@@ -59,12 +63,13 @@ export function stepCompute(cpu) {
       if(mod===1)off+=signed8(fetch());else if(mod===2)off+=word();
     }
     off&=0xffff; const seg=segmentOverride ? r[segmentOverride] : usesBP?r.ss:r.ds;
-    return {reg,operand:{read:()=>readMem(seg,off,width),write:v=>writeMem(seg,off,width,v)}};
+    return {reg,operand:{read:()=>readMem(seg,off,width,resetProfile && segmentOverride==='cs'),write:v=>writeMem(seg,off,width,v,resetProfile && segmentOverride==='cs')}};
   }
   function condition(cc) {
     const c=!!(r.flags&CF),p=!!(r.flags&PF),z=!!(r.flags&ZF),s=!!(r.flags&SF),o=!!(r.flags&OF);
     return [o,!o,c,!c,z,!z,c||z,!c&&!z,s,!s,p,!p,s!==o,s===o,z||(s!==o),!z&&(s===o)][cc];
   }
+  const initialFlags=r.flags;
   try {
     let op=fetch(),prefixCount=0;
     if(segmented) {
@@ -89,6 +94,7 @@ export function stepCompute(cpu) {
     else if(op>=0x40&&op<=0x4f){const id=op&7,dec=!!(op&8);mnemonic=`${dec?'DEC':'INC'} r16`;action=()=>{const cf=r.flags&CF,n=arithmetic(r,dec?'sub':'add',getReg(r,id,16),1,16);r.flags=(r.flags&~CF)|cf;setReg(r,id,16,n);};}
     else if(op>=0x70&&op<=0x7f){const d=signed8(fetch());mnemonic='Jcc rel8';action=()=>{if(condition(op&15))cursor=(cursor+d)&0xffff;};}
     else if(op===0xeb){const d=signed8(fetch());mnemonic='JMP rel8';action=()=>{cursor=(cursor+d)&0xffff;};}
+    else if(resetProfile&&op===0xea){const target=word(),segment=word();mnemonic='JMP ptr16:16';action=()=>{r.cs=segment;cpu.csBase=segment*16;cursor=target;};}
     else if(op>=0x50&&op<=0x57){const id=op&7;mnemonic='PUSH r16';action=()=>{const v=getReg(r,id,16),sp=(r.sp-2)&0xffff;writeMem(r.ss,sp,16,v);r.sp=sp;};}
     else if(op>=0x58&&op<=0x5f){const id=op&7;mnemonic='POP r16';action=()=>{const v=readMem(r.ss,r.sp,16);r.sp=(r.sp+2)&0xffff;setReg(r,id,16,v);};}
     else if(op===0xe8){const d=signed16(word());mnemonic='CALL rel16';action=()=>{const sp=(r.sp-2)&0xffff;writeMem(r.ss,sp,16,cursor);r.sp=sp;cursor=(cursor+d)&0xffff;};}
@@ -98,5 +104,5 @@ export function stepCompute(cpu) {
     else return unsupported(`unsupported opcode 0x${op.toString(16).padStart(2,'0')}`);
     trace.mnemonic=mnemonic;action();r.ip=cursor;
     return {status:cpu.halted?'halted':'retired',retired:true,trace,reason:cpu.halted?'HLT executed':null};
-  } catch(error) {if(error instanceof DecodeLimit)return unsupported(error.message);if(error instanceof PlatformAccess)return {status:'unsupported-platform-access',retired:false,trace,reason:error.message};throw error;}
+  } catch(error) {if(error instanceof DecodeLimit)return unsupported(error.message);if(error instanceof PlatformAccess){r.flags=initialFlags;return {status:'unsupported-platform-access',retired:false,trace,reason:error.message};}throw error;}
 }
