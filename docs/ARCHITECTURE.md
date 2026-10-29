@@ -30,8 +30,13 @@ port defaults, reset-vector mapping, chipset/A20 control and interrupt routing.
 [diagnostic-segments-v1](SEGMENT_PROFILE.md) specify the additional instruction and
 device behavior. See [support and evidence](SUPPORT.md) for tested boundaries.
 
-**Future `pc486-*`:** choose an exact CPU variant and documented board model before
-adding protected mode, paging, privilege, interrupts, x87, BIOS or OS claims. Do not
+**`i486-reset-v1`:** an opt-in, bounded reset/ROM experiment described in
+[RESET_PROFILE.md](RESET_PROFILE.md). It maps a tiny original reset diagnostic at
+the high reset vector and conventional ROM alias; its far jump reloads CS. This
+is not a PC board, firmware service, disk boot or an expansion of prior profiles.
+
+**Future `pc486-*`:** choose a documented board model before adding protected
+mode, paging, privilege, hardware interrupts, x87, BIOS or OS claims. Do not
 inherit modern x86 instructions, CPUID or behavior merely because a modern manual
 mentions them. Each version has a support matrix and incompatibility list.
 

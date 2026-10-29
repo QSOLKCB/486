@@ -60,8 +60,9 @@ callback; it cannot guard mutations after an `await` inside that callback. Await
 work first, then guard the synchronous commit. Cold reset reloads
 the declared initial RAM/register/device/event state and tick zero, keeping the
 selected committed disk overlay. “Discard overlay” is a separate explicit action;
-“reload disk” preserves identity and committed revisions. Reset neither claims to
-match hardware reset nor silently erases user data. Snapshot replay records the
+“reload disk” preserves identity and committed revisions. The direct-loader reset does not claim hardware reset; the bounded
+[i486-reset-v1](RESET_PROFILE.md) separately specifies its reset state. Neither
+silently erases user data. Snapshot replay records the
 profile, input log, tick, base hash and committed overlay revision.
 
 **A3 — One bus owner.** Memory/port ranges do not overlap unless a profile explicitly

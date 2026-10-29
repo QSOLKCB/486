@@ -5,6 +5,7 @@ import {echoProgram} from '../fixtures/diagnostics/echo.mjs';
 import {diskGuest} from '../fixtures/diagnostics/disk.mjs';
 import {makeComputeProgram, computeRegisters} from '../fixtures/diagnostics/compute.mjs';
 import {makeSegmentProgram} from '../fixtures/diagnostics/segments.mjs';
+import {resetRom} from '../fixtures/firmware/reset-rom.mjs';
 import {makeLabDisk} from '../fixtures/disks/lab-disk.mjs';
 import {DiskSession, DISK_PORTS, validateBase} from '../devices/disk.mjs';
 import {IndexedDBOverlayStore} from '../storage/indexeddb.mjs';
@@ -23,12 +24,16 @@ function render() {
  $('profile').textContent=machine.profile; $('tick').textContent=String(machine.tick);
  $('state').textContent=machine.state.toUpperCase();
  $('instruction').textContent=machine.lastOutcome?.trace?.mnemonic || '—';
- $('reason').textContent=machine.lastOutcome?.reason || (machine.state==='running' ? 'Executing bounded batches.' : machine.tick === 0 ? 'Ready at the direct-loader entry point.' : 'Paused at the current instruction boundary.');
+ $('reason').textContent=machine.lastOutcome?.reason || (machine.state==='running' ? 'Executing bounded batches.' : machine.tick === 0 ? (machine.profile==='i486-reset-v1' ? 'Ready at the 486 reset vector.' : 'Ready at the direct-loader entry point.') : 'Paused at the current instruction boundary.');
+ $('entry').textContent=machine.profile==='i486-reset-v1' ? 'RESET VECTOR · F000:FFF0' : 'DIRECT LOADER · 0000:7C00';
  $('output').textContent=machine.output.length ? machine.output.map(n=>n>=32&&n<=126?String.fromCharCode(n):`\\x${hex(n,2)}`).join('') : '—';
  const memory=machine.bus.ram; let lines=[];
  for(let row=0;row<25;row++) { let line=''; for(let col=0;col<80;col++) {const c=memory[0xb8000+(row*80+col)*2];line+=c>=32&&c<=126?String.fromCharCode(c):' ';} lines.push(line); }
  $('screen').textContent=lines.join('\n');
- $('screen-state').textContent=document.activeElement===$('screen') ? 'KEYBOARD FOCUSED' : 'FOCUS TO TYPE';
+ const acceptsInput=$('program').value==='text' && machine.state!=='halted' && machine.state!=='stopped';
+ $('screen-state').textContent=acceptsInput ? (document.activeElement===$('screen') ? 'KEYBOARD FOCUSED' : 'CLICK TO FOCUS') : 'NO KEYBOARD INPUT';
+ $('screen-help').textContent=acceptsInput ? 'Click display, then type printable characters' : 'No keyboard input for this diagnostic';
+ $('screen').setAttribute('aria-label', acceptsInput ? 'Guest text display. Click or focus here to send printable keys.' : 'Guest text display. This diagnostic does not accept keyboard input.');
  if(disk) $('disk-status').textContent=`${diskLabel} · ${disk.identity} · revision ${disk.revision}. ${disk.status}. ${Object.keys(disk.device.staged).length ? 'Guest changes staged; save to commit.' : ''}`;
  $('save-disk').disabled=!disk || !!disk.pending || transitioning || machine.state==='running'; $('export-disk').disabled=!disk || transitioning;
  for(const id of ['run','step']) $(id).disabled=transitioning || !machine || !!disk?.pending;
@@ -43,13 +48,13 @@ async function newMachine() {
   if(disk) await disk.reset();
   if(request!==epoch) return;
   const selected=$('program').value;
-  const options = selected==='segments' ? {program:makeSegmentProgram(),profile:'diagnostic-segments-v1'} : selected==='compute' ? {program:makeComputeProgram(),profile:'diagnostic-compute-v1',registers:computeRegisters} : selected==='text' ? {program:echoProgram,profile:'diagnostic-text-v1',registers:{ds:0xb800},setupBus:attachKeyboard,onEvent:keyboardEvent} : selected==='disk' ? {program:diskGuest,profile:'diagnostic-disk-v1',setupBus(bus){if(disk) for(const port of DISK_PORTS)bus.registerPort(port,disk.device);}} : {program:hello};
+  const options = selected==='reset-rom' ? {profile:'i486-reset-v1',rom:resetRom()} : selected==='segments' ? {program:makeSegmentProgram(),profile:'diagnostic-segments-v1'} : selected==='compute' ? {program:makeComputeProgram(),profile:'diagnostic-compute-v1',registers:computeRegisters} : selected==='text' ? {program:echoProgram,profile:'diagnostic-text-v1',registers:{ds:0xb800},setupBus:attachKeyboard,onEvent:keyboardEvent} : selected==='disk' ? {program:diskGuest,profile:'diagnostic-disk-v1',setupBus(bus){if(disk) for(const port of DISK_PORTS)bus.registerPort(port,disk.device);}} : {program:hello};
   machine=new Machine(options); transitioning=false; render();
  } catch(error) {
   if(request===epoch) {transitioning=true;render();$('reason').textContent=`Reset failed: ${error.message}`;}
  }
 }
-$('run').addEventListener('click',()=>{if(transitioning || disk?.pending || disk?.resetting) return;machine?.resume();render();schedule();});
+$('run').addEventListener('click',()=>{if(transitioning || disk?.pending || disk?.resetting) return;machine?.resume();if(machine?.profile==='diagnostic-text-v1' && machine.state==='running') $('screen').focus();render();schedule();});
 $('pause').addEventListener('click',()=>{machine?.pause();stopFrame();render();});
 $('step').addEventListener('click',()=>{if(!machine || transitioning || disk?.pending || disk?.resetting) return;machine.pause();stopFrame();machine.step();render();});
 $('reset').addEventListener('click',newMachine);

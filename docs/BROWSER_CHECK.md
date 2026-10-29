@@ -10,7 +10,7 @@ node scripts/browser-check.mjs
 ```
 
 The script serves the checkout locally under `/486/`, exercises the real app,
-and saves five screenshots in a new temporary directory (printed at the end).
+and saves six screenshots in a new temporary directory (printed at the end).
 `SCREENSHOT_DIR` can choose a different directory. `PLAYWRIGHT_MODULE` may point
 to an absolute Playwright entry module when the package is installed elsewhere;
 `CHROMIUM_PATH` may point to an existing Chromium executable. An optional JSON
@@ -25,9 +25,15 @@ command itself was unchanged. That headless environment required its SwiftShader
 `LD_LIBRARY_PATH` and `CHROMIUM_EXTRA_ARGS='["--no-sandbox","--disable-gpu","--disable-dev-shm-usage","--single-process","--no-zygote"]'`.
 These are test-environment settings, not shipped app dependencies or a
 recommendation to disable sandboxing on a normal desktop. Firefox was not tested.
-The script verifies guest outputs including the compute and segmentation guests, controls, focus and repeated input, disk
-persistence and export, malformed and same-name imports, and page/console errors.
+The script verifies guest outputs including the compute, segmentation and reset-ROM
+diagnostics, reset-vector stepping and repeat, controls, focus and repeated input,
+disk persistence and export, malformed and same-name imports, and page/console
+errors. The reset-ROM screenshot shows an executed diagnostic, not a booted console.
 It does not prove complete x86, PC or browser compatibility.
+
+The [reset ROM screenshot](evidence/reset-rom-chromium.png) shows the Chromium
+check after the actual guest halted with `R` at tick 5. It is evidence of this
+diagnostic only, not a firmware boot or an interactive guest console.
 
 For a staged Pages artifact, copy this script into its `scripts/` directory for
 verification only and set `CHECK_RENDERED_DOCS=1`. The check additionally opens
