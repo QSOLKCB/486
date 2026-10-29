@@ -10,7 +10,7 @@ node scripts/browser-check.mjs
 ```
 
 The script serves the checkout locally under `/486/`, exercises the real app,
-and saves three screenshots in a new temporary directory (printed at the end).
+and saves four screenshots in a new temporary directory (printed at the end).
 `SCREENSHOT_DIR` can choose a different directory. `PLAYWRIGHT_MODULE` may point
 to an absolute Playwright entry module when the package is installed elsewhere;
 `CHROMIUM_PATH` may point to an existing Chromium executable. An optional JSON
@@ -25,6 +25,6 @@ command itself was unchanged. That headless environment required its SwiftShader
 `LD_LIBRARY_PATH` and `CHROMIUM_EXTRA_ARGS='["--no-sandbox","--disable-gpu","--disable-dev-shm-usage","--single-process","--no-zygote"]'`.
 These are test-environment settings, not shipped app dependencies or a
 recommendation to disable sandboxing on a normal desktop. Firefox was not tested.
-The script verifies the guest output, controls, focus and repeated input, disk
+The script verifies guest outputs including the compute guest, controls, focus and repeated input, disk
 persistence and export, malformed and same-name imports, and page/console errors.
 It does not prove complete x86, PC or browser compatibility.

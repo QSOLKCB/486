@@ -25,7 +25,8 @@ exception. A future PC profile must specify ROM, MMIO, holes/open-bus behavior,
 port defaults, reset-vector mapping, chipset/A20 control and interrupt routing.
 
 **Implemented extensions:** [diagnostic-text-v1](TEXT_PROFILE.md) and
-[diagnostic-disk-v1](DISK_PROFILE.md) specify the additional instruction and
+[diagnostic-disk-v1](DISK_PROFILE.md), and
+[diagnostic-compute-v1](COMPUTE_PROFILE.md) specify the additional instruction and
 device behavior. See [support and evidence](SUPPORT.md) for tested boundaries.
 
 **Future `pc486-*`:** choose an exact CPU variant and documented board model before
