@@ -1,0 +1,18 @@
+{
+  "id": "text-echo-v1",
+  "license": "Apache-2.0",
+  "origin": "Original diagnostic authored for QSOLKCB/486; no imported bytes",
+  "profile": "diagnostic-text-v1",
+  "loadAddress": 31744,
+  "source": [
+    "poll: in al, 0x64; test al, 1; jz poll",
+    "in al, 0x60; mov [bx], al; inc bx; mov byte [bx], 7; inc bx",
+    "cmp bx, 4000; jb poll_again; mov bx, 0",
+    "poll_again: jmp poll"
+  ],
+  "recipe": "Concatenate the hand-written encodings in echo.mjs. The bytecode has no assembler dependency.",
+  "hex": "e464a80174fae460880743c607074381fba00f7203bb0000ebe6",
+  "length": 26,
+  "sha256": "2cb3ea7c26614b9d36c8b07a5ea5ee1acb91cc8fb1d7c61ed8dc3700560c9ab2",
+  "expected": "Printable input bytes appear in successive character cells at B800:0000 with attribute 07; cursor wraps after 2000 cells."
+}

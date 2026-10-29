@@ -2,7 +2,7 @@
 
 ## Profiles, not compatibility by implication
 
-The name is a destination. There is no running machine in this foundation.
+The name is a destination. The running lab implements only the profiles described below and their linked extensions.
 Profiles are versioned contracts; any addition must specify reset state, mapped
 resources, supported instructions and observable timing before claiming support.
 
@@ -23,6 +23,10 @@ An unmapped physical access or absent port stops this lab profile with an
 `unsupported-platform-access` diagnostic. It is not automatically a guest CPU
 exception. A future PC profile must specify ROM, MMIO, holes/open-bus behavior,
 port defaults, reset-vector mapping, chipset/A20 control and interrupt routing.
+
+**Implemented extensions:** [diagnostic-text-v1](TEXT_PROFILE.md) and
+[diagnostic-disk-v1](DISK_PROFILE.md) specify the additional instruction and
+device behavior. See [support and evidence](SUPPORT.md) for tested boundaries.
 
 **Future `pc486-*`:** choose an exact CPU variant and documented board model before
 adding protected mode, paging, privilege, interrupts, x87, BIOS or OS claims. Do not

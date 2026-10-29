@@ -29,3 +29,10 @@ old expected results to hide a changed implementation.
 
 These links are research starting points, not claims of full manual coverage or
 formal verification. Browser/runtime documentation cannot establish x86 semantics.
+
+## Original text diagnostic
+
+`fixtures/diagnostics/echo.mjs` and `echo.json` are project-authored and licensed
+under Apache-2.0. Their 26 bytes are hand-encoded directly in the source; no assembler,
+third-party font, ROM, or other asset is used. The recipe and SHA-256 are in the
+versioned JSON receipt. Browser monospace rendering uses the user's available font.
