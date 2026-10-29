@@ -54,7 +54,10 @@ wake-up/time advancement must be separately specified; do not invent it here.
 
 **A2 — Reset is scoped and cancels stale work.** Increment a session generation
 before rebuilding volatile machine state. Old I/O promises, worker messages,
-timers and audio callbacks cannot mutate the new generation. Cold reset reloads
+timers and audio callbacks cannot mutate the new generation. The reference
+generation guard checks its captured generation immediately before invoking a
+callback; it cannot guard mutations after an `await` inside that callback. Await
+work first, then guard the synchronous commit. Cold reset reloads
 the declared initial RAM/register/device/event state and tick zero, keeping the
 selected committed disk overlay. “Discard overlay” is a separate explicit action;
 “reload disk” preserves identity and committed revisions. Reset neither claims to

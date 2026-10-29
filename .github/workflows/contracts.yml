@@ -6,16 +6,25 @@ permissions:
   contents: read
 jobs:
   reference-checks:
+    if: github.event_name != 'push' || !github.event.deleted
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
-          fetch-depth: 2
+          fetch-depth: 0
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .node-version
           package-manager-cache: false
       - run: node --test
-      - run: git diff --check HEAD^ HEAD
+      - name: Check whitespace on pull request merge
+        if: github.event_name == 'pull_request'
+        run: git diff --check HEAD^ HEAD
+      - name: Check whitespace for the push
+        if: github.event_name == 'push'
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: node scripts/check-push-whitespace.mjs "$BEFORE" "$AFTER"
