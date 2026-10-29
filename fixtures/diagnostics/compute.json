@@ -1,0 +1,28 @@
+{
+  "id": "compute-sum-v1",
+  "profile": "diagnostic-compute-v1",
+  "license": "Apache-2.0",
+  "origin": "Original program authored for QSOLKCB/486; no imported bytes",
+  "entry": {"cs": 0, "ip": 31744, "ds": 0, "ss": 8192, "sp": 256, "bp": 8738, "flags": 2},
+  "source": [
+    "mov dx,00e9h; mov bx,1234h; mov si,7c80h; mov cx,4; mov ax,0",
+    "call sum; out dx,al; hlt",
+    "sum: push bx; push bp; mov bp,sp",
+    "loop: mov bl,[si]; add al,bl; inc si; dec cx; jnz loop",
+    "mov bx,[bp+2]; pop bp; pop bx; ret",
+    "data at 0000:7c80 = 10h,11h,12h,13h"
+  ],
+  "recipe": "Node 24.22.1: import makeComputeProgram from compute.mjs, write its 132 returned bytes unchanged. The function concatenates explicitly annotated instruction encodings, zero-pads to offset 80h, then appends four data bytes; no assembler or external data is used.",
+  "length": 132,
+  "sha256": "d1f3db9ef05e8b087f97e3fd8bb69e788f90a9953c8ad66e2f06e9cf7ccd7c38",
+  "expected": {
+    "registersHex": {"ax":"0046","bx":"1234","cx":"0000","dx":"00e9","si":"7c84","di":"0000","bp":"2222","sp":"0100","cs":"0000","ds":"0000","es":"0000","ss":"2000","ip":"7c14","flags":"0046"},
+    "portE9Hex": "46",
+    "dataHex": "10111213",
+    "stackPhysicalAddressHex": "200fa",
+    "stackBytesHex": "22223412127c",
+    "retiredInstructions": 35,
+    "outcome": "halted",
+    "mutation": "Replacing the last data byte 13h with 14h changes port E9 output from 46h (F) to 47h (G)."
+  }
+}

@@ -36,3 +36,10 @@ formal verification. Browser/runtime documentation cannot establish x86 semantic
 under Apache-2.0. Their 26 bytes are hand-encoded directly in the source; no assembler,
 third-party font, ROM, or other asset is used. The recipe and SHA-256 are in the
 versioned JSON receipt. Browser monospace rendering uses the user's available font.
+
+## Original computation diagnostic
+
+`fixtures/diagnostics/compute.mjs` and `compute.json` are project-authored under
+Apache-2.0. The 132-byte direct-loaded guest is assembled from explicit encodings
+without external code or assets; the receipt records its source, recipe, SHA-256,
+initial state and expected observations.
