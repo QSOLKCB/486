@@ -1,5 +1,6 @@
 // Apache-2.0. Bounded real-mode decoder for the documented lab profiles.
 import { PlatformAccess } from '../bus/bus.mjs';
+import { stepCompute } from './compute.mjs';
 const CF = 1, PF = 4, AF = 16, ZF = 64, SF = 128, OF = 2048;
 const parity = n => { let p = 0; for (let i = 0; i < 8; i++) p ^= (n >> i) & 1; return p === 0; };
 function setFlag(f, mask, value) { return value ? f | mask : f & ~mask; }
@@ -9,13 +10,14 @@ function common(f, n, width) {
 }
 export class Cpu {
   constructor(bus, {profile = 'diagnostic-real-v1', registers = {}} = {}) {
-    if (!['diagnostic-real-v1', 'diagnostic-text-v1', 'diagnostic-disk-v1'].includes(profile)) throw new RangeError('unknown profile');
+    if (!['diagnostic-real-v1', 'diagnostic-text-v1', 'diagnostic-disk-v1', 'diagnostic-compute-v1'].includes(profile)) throw new RangeError('unknown profile');
     this.bus = bus; this.profile = profile;
     this.registers = {ax:0,bx:0,cx:0,dx:0,si:0,di:0,bp:0,sp:0,cs:0,ds:0,es:0,ss:0,ip:0x7c00,flags:2,...registers};
     for (const [name, value] of Object.entries(this.registers)) if (!Number.isInteger(value) || value < 0 || value > 0xffff) throw new RangeError(`invalid register ${name}`);
     this.halted = false;
   }
   step() {
+    if (this.profile === 'diagnostic-compute-v1') return stepCompute(this);
     const r = this.registers, start = {cs:r.cs, ip:r.ip}, bytes = [];
     const trace = {profile:this.profile, start, bytes};
     if (this.halted) return {status:'halted', retired:false, trace, reason:'CPU halted'};
