@@ -1,13 +1,15 @@
 # Support and evidence
 
-The direct-loader lab is an early diagnostic subset. It does not claim an i486
-hardware reset, a boot sector, BIOS, DOS, VGA, ATA, floppy, or game compatibility.
+The application is an early diagnostic lab, with an additional opt-in reset
+experiment. It does not claim a boot sector, BIOS, DOS, VGA, ATA, floppy, or game
+compatibility.
 No CPU exception, protected mode, paging, x87, JIT, audio, interrupts, DMA, cycle
 accuracy or equivalent MHz is implemented. A retired instruction is one virtual
 scheduling tick, not a hardware cycle.
 
 | Profile | Implemented behavior | Evidence and limits |
 |---|---|---|
+| `i486-reset-v1` | Sparse read-only ROM at the reset vector and low alias; immediate far jump reloads CS | Original ROM diagnostic jumps from the high reset vector to its low alias, emits `R` on lab port E9 and halts. This is not a BIOS or disk boot. See [reset contract](RESET_PROFILE.md). |
 | `diagnostic-real-v1` | 2 MiB RAM, A20 enabled, `0000:7c00` loader; MOV DX/AL immediate, OUT DX,AL, HLT; lab port E9 | Original seven-byte guest emits `K` then halts; a changed immediate changes actual output. Unsupported encodings and unmapped accesses stop diagnostically. |
 | `diagnostic-compute-v1` | A bounded 8/16-bit arithmetic, 16-bit addressing and near-subroutine instruction slice | Original guest sums four data bytes via a loop and CALL/RET, preserving registers on the SS stack and emitting `F`. Mutating input changes the output. See the [exact matrix](COMPUTE_PROFILE.md). |
 | `diagnostic-segments-v1` | Adds guest DS/ES MOV and four segment overrides to the compute slice | Original guest loads DS and ES, uses DS, ES and SS, emits `V`; selected input mutation changes the output. [Exact encodings and diagnostic limits](SEGMENT_PROFILE.md). |

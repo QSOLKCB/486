@@ -58,3 +58,11 @@ the MIT license, solely as a build tool. Its origin, rights, byte length, SHA-25
 recipe and license are recorded in [tools/marked/README.md](../tools/marked/README.md).
 It is not included in the browser app. The renderer operates on project
 documentation during the build; imported guest disks are never rendered.
+
+## Original reset ROM diagnostic
+
+`fixtures/firmware/reset-rom.mjs` is original project-authored code under the
+root Apache-2.0 license; it generates the reset diagnostic without imported
+firmware, assembler or other third-party bytes. Its size, recipe, hash, intended
+execution and evidence boundaries are recorded in [RESET_PROFILE.md](RESET_PROFILE.md).
+It is not a BIOS or bootable disk.

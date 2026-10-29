@@ -10,14 +10,18 @@ function common(f, n, width) {
 }
 export class Cpu {
   constructor(bus, {profile = 'diagnostic-real-v1', registers = {}} = {}) {
-    if (!['diagnostic-real-v1', 'diagnostic-text-v1', 'diagnostic-disk-v1', 'diagnostic-compute-v1', 'diagnostic-segments-v1'].includes(profile)) throw new RangeError('unknown profile');
+    if (!['diagnostic-real-v1', 'diagnostic-text-v1', 'diagnostic-disk-v1', 'diagnostic-compute-v1', 'diagnostic-segments-v1', 'i486-reset-v1'].includes(profile)) throw new RangeError('unknown profile');
     this.bus = bus; this.profile = profile;
-    this.registers = {ax:0,bx:0,cx:0,dx:0,si:0,di:0,bp:0,sp:0,cs:0,ds:0,es:0,ss:0,ip:0x7c00,flags:2,...registers};
+    const reset = profile === 'i486-reset-v1';
+    this.registers = {ax:0,bx:0,cx:0,dx:reset ? 0x0400 : 0,si:0,di:0,bp:0,sp:0,cs:reset ? 0xf000 : 0,ds:0,es:0,ss:0,ip:reset ? 0xfff0 : 0x7c00,flags:2,...registers};
+    // The 486 reset CS descriptor cache holds a special high base until CS
+    // is reloaded. It is not the ordinary real-mode selector << 4 base.
+    this.csBase = reset ? 0xffff0000 : null;
     for (const [name, value] of Object.entries(this.registers)) if (!Number.isInteger(value) || value < 0 || value > 0xffff) throw new RangeError(`invalid register ${name}`);
     this.halted = false;
   }
   step() {
-    if (this.profile === 'diagnostic-compute-v1' || this.profile === 'diagnostic-segments-v1') return stepCompute(this);
+    if (this.profile === 'diagnostic-compute-v1' || this.profile === 'diagnostic-segments-v1' || this.profile === 'i486-reset-v1') return stepCompute(this);
     const r = this.registers, start = {cs:r.cs, ip:r.ip}, bytes = [];
     const trace = {profile:this.profile, start, bytes};
     if (this.halted) return {status:'halted', retired:false, trace, reason:'CPU halted'};

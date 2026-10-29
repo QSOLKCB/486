@@ -27,6 +27,7 @@ tests, but its name is not a claim of broad emulator conformance. See
 | Segmentation slice | Guest-written DS/ES, independently specified 16-bit address vectors, four overrides, unchanged fetch and implicit SS stack | unsupported selector/prefix, repeated prefixes, decode budget, truncated fetch, A20 and segment/mapped word boundaries, no partial writes |
 | Scheduler | same state/trace with host batches 1, 7, 1000; replay logged inputs | same-tick order; automatic pause consumes no events; reset rejects delayed old callbacks; IRQ wake behavior when introduced |
 | Disks | same base+revision reopens; export byte comparison; committed overlay survives reset | identical names/different hashes; geometry mismatch; OOB sectors; quota/abort/mid-write failures; reload during write; stale writer and schema migration |
+| Reset/ROM slice | high reset fetch, ROM diagnostic trace and far jump to low alias; repeat reset and batch execution | ROM writes rejected, aliases agree, A20 and unmapped/fetch boundaries checked; old direct-loader profiles unchanged |
 | PC/486 | lawful reproducible guest output; descriptor/paging/interrupt traces | guest fault vs unsupported distinction; fault restart and REP partial progress; privilege and page-boundary writes |
 | Browser/audio | run/pause/step/reset; keyboard focus; gesture resume; clean repeated sessions | blocked autoplay, hidden tab, context close race, stale worker output, resource growth, persistence denied/evicted |
 

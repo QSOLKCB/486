@@ -8,7 +8,9 @@ arithmetic/addressing/subroutine guest exist as separate profiles. The [guest-co
 separate opt-in profile; consult its support matrix and fixture receipt for its
 tested scope. These are
 partial real-mode and lab-device capabilities, not BIOS boot, ATA/floppy hardware,
-complete real mode or a 486 compatibility claim.
+complete real mode or a 486 compatibility claim. The separate
+[i486-reset-v1](RESET_PROFILE.md) experiment adds a reset-vector ROM diagnostic;
+it does not yet boot a disk or provide BIOS services.
 
 Begin new work by inspecting current main and its history, reading AGENTS.md,
 architecture, invariants, support matrix, profile docs and the evidence-gated
@@ -17,13 +19,15 @@ the pinned Node version. Preserve the event-iterator, generation-guard and push
 whitespace hardening, all prior fixtures, disk data and browser workflows. Keep
 CPU and devices independent from the DOM, storage completion timing and audio.
 
-The next smallest gate after the segmentation slice is a separately specified set
-of byte/word logical instructions and an original guest demonstrating them. Require
-executor vectors and, where feasible, independent differential evidence for every
-claimed form and defined flag, plus negative, boundaries, batch/step/reset and
-browser regression checks. This is a proposal for a future authorized task, not
-permission to implement the later board/boot, protected-mode or audio stages. Those
-stages require the prerequisites and exit evidence in the roadmap.
+The next boot gate is a separately specified software-interrupt/IVT and firmware
+service slice: define INT/IRET frame and returned FLAGS behavior, guest installation
+of vectors, explicit unsupported-service errors and independent boundary tests.
+Then build and prove a real 512-byte-sector boot path and an original guest-run
+console, including keyboard wait scheduling and line editing. The existing disk has
+16-byte sectors; a new, versioned block interface and persistence contract are
+required, not an undocumented reinterpretation of existing images. Neither the
+reset diagnostic nor its `R` output is evidence of a BIOS or booted OS. The
+roadmap retains the other hardware, protected-mode, paging and audio prerequisites.
 
 Deliver a reviewable PR with exact commit, commands, passed/failed/unrun checks,
 fixture provenance and screenshots if the UI changes. Leave merge, release and
