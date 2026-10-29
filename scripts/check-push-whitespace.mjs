@@ -1,6 +1,7 @@
 // Check each introduced commit, plus the net tree delta for rewinds/force pushes.
 // With an unavailable old tip, audit the entire resulting tree instead.
 import {spawnSync} from 'node:child_process';
+import {streamPushCommits} from './stream-push-commits.mjs';
 
 const [before, after] = process.argv.slice(2);
 if (![before, after].every(value => /^[0-9a-f]{40}$/.test(value ?? ''))) {
@@ -27,10 +28,8 @@ if (before === zero || git(['cat-file', '-e', `${before}^{commit}`], true).statu
   git(['diff', '--check', empty, after]);
 } else {
   git(['diff', '--check', before, after]);
-  const commits = git(['rev-list', '--reverse', `${before}..${after}`]).stdout.trim().split('\n').filter(Boolean);
-  for (const commit of commits) {
-    const parents = git(['rev-list', '--parents', '-n', '1', commit]).stdout.trim().split(' ');
-    git(['diff', '--check', parents[1] ?? empty, commit]);
-  }
-  console.log(`Checked net delta and ${commits.length} introduced commit(s).`);
+  const count = await streamPushCommits(`${before}..${after}`, (commit, parent) => {
+    git(['diff', '--check', parent ?? empty, commit]);
+  });
+  console.log(`Checked net delta and ${count} introduced commit(s).`);
 }

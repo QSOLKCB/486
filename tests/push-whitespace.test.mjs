@@ -31,3 +31,26 @@ test('push whitespace checks all introduced commits and fallback snapshots', t =
   assert.notEqual(check('f'.repeat(40), bad).status, 0, 'unavailable old tip snapshot must be checked');
   assert.equal(check('f'.repeat(40), fixed).status, 0, 'clean fallback snapshot passes');
 });
+
+test('large rev-list streams without Node output-buffer limits and reports failures', t => {
+  const dir = mkdtempSync(join(tmpdir(), '486-rev-list-'));
+  t.after(() => rmSync(dir, {recursive: true, force: true}));
+  const fakeGit = join(dir, 'git');
+  const streamModule = new URL('../scripts/stream-push-commits.mjs', import.meta.url).href;
+  // Over 2 MiB of valid rev-list output: well beyond spawnSync's 1 MiB default.
+  // The visit callback is in-process so the regression remains fast and does
+  // not create 30,000 git repositories or git-diff subprocesses.
+  writeFileSync(fakeGit, `#!${process.execPath}\nconst line = 'a'.repeat(40) + ' ' + 'b'.repeat(40) + '\\n';\nif (process.env.FAKE_GIT_MODE === 'failure') { process.exitCode = 3; }\nelse if (process.env.FAKE_GIT_MODE === 'invalid') { process.stdout.write('not-a-sha\\n'); }\nelse { process.stdout.write(line.repeat(30000)); }\n`, {mode: 0o755});
+  const env = {...process.env, PATH: `${dir}:${process.env.PATH}`};
+  const run = (mode, body) => spawnSync(process.execPath, ['--input-type=module', '-e',
+    `import {streamPushCommits} from ${JSON.stringify(streamModule)}; ${body}`],
+    {encoding: 'utf8', env: {...env, FAKE_GIT_MODE: mode}, timeout: 15000});
+  const large = run('large', `let count=0; const actual=await streamPushCommits('range',(commit,parent)=>{if(commit!=='a'.repeat(40)||parent!=='b'.repeat(40))throw Error('invalid record'); count++;}); if(actual!==30000||count!==30000)throw Error('bad count'); console.log('passed');`);
+  assert.equal(large.status, 0, large.stderr); assert.match(large.stdout, /passed/);
+  const failed = run('failure', `await streamPushCommits('range',()=>{});`);
+  assert.notEqual(failed.status, 0); assert.match(failed.stderr, /git rev-list failed \(3\)/);
+  const invalid = run('invalid', `await streamPushCommits('range',()=>{});`);
+  assert.notEqual(invalid.status, 0); assert.match(invalid.stderr, /Invalid commit record/);
+  const interrupted = run('large', `await streamPushCommits('range',()=>{throw Error('visitor failed');});`);
+  assert.notEqual(interrupted.status, 0); assert.match(interrupted.stderr, /visitor failed/);
+});

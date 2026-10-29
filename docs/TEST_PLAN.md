@@ -55,4 +55,6 @@ the previous tip is missing (for example, a new branch or an unavailable
 force-push tip), CI checks the entire resulting tree against the empty tree. This
 fallback checks only the final snapshot; it cannot establish whether individual
 introduced commits are whitespace-free. Deleted refs skip the job. Pull requests
-continue to check their merge-ref delta.
+continue to check their merge-ref delta. The commit list is streamed, avoiding
+Node's buffered-output limit. Each commit still requires a Git check, so very
+large ranges can exceed the workflow's five-minute timeout.
