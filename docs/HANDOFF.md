@@ -1,6 +1,40 @@
 # Terra handoff
 
-## Start here
+## Current status and next work
+
+The foundation contracts and original direct-loaded `K` diagnostic are implemented.
+The text/keyboard guest, synthetic lab-disk guest with local overlay, and bounded
+arithmetic/addressing/subroutine guest exist as separate profiles. The [guest-controlled segmentation slice](SEGMENT_PROFILE.md) is a
+separate opt-in profile; consult its support matrix and fixture receipt for its
+tested scope. These are
+partial real-mode and lab-device capabilities, not BIOS boot, ATA/floppy hardware,
+complete real mode or a 486 compatibility claim.
+
+Begin new work by inspecting current main and its history, reading AGENTS.md,
+architecture, invariants, support matrix, profile docs and the evidence-gated
+[roadmap](ROADMAP.md). Record the baseline commit and run the unchanged tests on
+the pinned Node version. Preserve the event-iterator, generation-guard and push
+whitespace hardening, all prior fixtures, disk data and browser workflows. Keep
+CPU and devices independent from the DOM, storage completion timing and audio.
+
+The next smallest gate after the segmentation slice is a separately specified set
+of byte/word logical instructions and an original guest demonstrating them. Require
+executor vectors and, where feasible, independent differential evidence for every
+claimed form and defined flag, plus negative, boundaries, batch/step/reset and
+browser regression checks. This is a proposal for a future authorized task, not
+permission to implement the later board/boot, protected-mode or audio stages. Those
+stages require the prerequisites and exit evidence in the roadmap.
+
+Deliver a reviewable PR with exact commit, commands, passed/failed/unrun checks,
+fixture provenance and screenshots if the UI changes. Leave merge, release and
+Pages deployment to the maintainer.
+
+## Historical handoff: completed first-lab work
+
+The text below records the original handoff and its evidence gates. It is preserved
+as historical context, not an instruction to rebuild the already delivered lab.
+
+### Original start here
 
 Start with milestone 1, then grow a useful interactive diagnostic lab in gated PRs.
 Do not attempt the whole 486 roadmap in one change. The harness is support: use tools,
@@ -24,13 +58,13 @@ or paging are required for this slice. A future feature is not grounds to weaken
 current checks. Propose a better contract explicitly if implementation reveals an
 error; attach counterexample, source and regression test.
 
-## First gate, not the whole implementation finish line
+### Historical first gate, not the whole implementation finish line
 
 A user can step four actual guest instructions, see `K`, see HLT, reset and repeat.
 The code cannot report success after unsupported execution. Continue only after
 this gate passes; it is not a substitute for the interactive lab below.
 
-## Useful implementation handoff finish line
+### Historical useful implementation handoff finish line
 
 Extend the documented profile and original guests in small, tested increments:
 
