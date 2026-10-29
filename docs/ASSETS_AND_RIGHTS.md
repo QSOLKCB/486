@@ -50,3 +50,11 @@ initial state and expected observations.
 Apache-2.0. The zero-padded direct-loaded image is made from explicit original
 encodings and data, without imported ROMs or external assets. Its receipt records
 source, recipe, length, hash, initial state and expected guest observations.
+
+## Pages documentation renderer
+
+The Pages build uses an unmodified, vendored Marked 17.0.5 ESM parser under
+the MIT license, solely as a build tool. Its origin, rights, byte length, SHA-256,
+recipe and license are recorded in [tools/marked/README.md](../tools/marked/README.md).
+It is not included in the browser app. The renderer operates on project
+documentation during the build; imported guest disks are never rendered.
