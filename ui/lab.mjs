@@ -21,7 +21,7 @@ function render() {
  $('profile').textContent=machine.profile; $('tick').textContent=String(machine.tick);
  $('state').textContent=machine.state.toUpperCase();
  $('instruction').textContent=machine.lastOutcome?.trace?.mnemonic || '—';
- $('reason').textContent=machine.lastOutcome?.reason || (machine.state==='running'?'Executing bounded batches.':'Ready at the direct-loader entry point.');
+ $('reason').textContent=machine.lastOutcome?.reason || (machine.state==='running' ? 'Executing bounded batches.' : machine.tick === 0 ? 'Ready at the direct-loader entry point.' : 'Paused at the current instruction boundary.');
  $('output').textContent=machine.output.length ? machine.output.map(n=>n>=32&&n<=126?String.fromCharCode(n):`\\x${hex(n,2)}`).join('') : '—';
  const memory=machine.bus.ram; let lines=[];
  for(let row=0;row<25;row++) { let line=''; for(let col=0;col<80;col++) {const c=memory[0xb8000+(row*80+col)*2];line+=c>=32&&c<=126?String.fromCharCode(c):' ';} lines.push(line); }
