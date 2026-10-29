@@ -16,9 +16,12 @@ to an absolute Playwright entry module when the package is installed elsewhere;
 `CHROMIUM_PATH` may point to an existing Chromium executable. An optional JSON
 array in `CHROMIUM_EXTRA_ARGS` supplies browser-specific launch arguments.
 
-The implementation receipt used Playwright 1.62.1 and Chromium 153.0.8010.0
+The updated receipt used the default `require.resolve('playwright')` path,
+without `PLAYWRIGHT_MODULE`: Playwright 1.62.1 resolved its CommonJS `index.js`,
+and the check passed with Chromium 153.0.8010.0
 from the `@sparticuz/chromium` 153.0.0 development package, on Linux and Node
-24.22.1. That headless environment required its SwiftShader libraries on
+24.22.1. Playwright was made visible using `NODE_PATH`; the documented Node
+command itself was unchanged. That headless environment required its SwiftShader libraries on
 `LD_LIBRARY_PATH` and `CHROMIUM_EXTRA_ARGS='["--no-sandbox","--disable-gpu","--disable-dev-shm-usage","--single-process","--no-zygote"]'`.
 These are test-environment settings, not shipped app dependencies or a
 recommendation to disable sandboxing on a normal desktop. Firefox was not tested.

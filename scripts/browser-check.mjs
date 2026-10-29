@@ -3,7 +3,9 @@ import http from 'node:http'; import fs from 'node:fs/promises'; import path fro
 import {createHash} from 'node:crypto'; import {fileURLToPath, pathToFileURL} from 'node:url'; import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
 const playwrightPath=process.env.PLAYWRIGHT_MODULE || require.resolve('playwright');
-const {chromium}=await import(pathToFileURL(path.resolve(playwrightPath)).href);
+const playwright=await import(pathToFileURL(path.resolve(playwrightPath)).href);
+const chromium=playwright.chromium ?? playwright.default?.chromium;
+if (!chromium) throw new Error('Playwright module does not expose chromium');
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const screenshots=process.env.SCREENSHOT_DIR ? path.resolve(process.env.SCREENSHOT_DIR) : await fs.mkdtemp(path.join(os.tmpdir(),'486-browser-check-'));
 await fs.mkdir(screenshots,{recursive:true});
