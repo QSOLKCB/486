@@ -9,7 +9,8 @@ python3 -m http.server 8000
 Open `http://localhost:8000/`. For the original diagnostic, select **Port output
 diagnostic**, then Run or Step four times: port E9 shows `K` and the machine halts.
 Select **Arithmetic / subroutine** to execute an array checksum loop and subroutine;
-the fresh guest emits `F`. Select **Keyboard echo diagnostic**, Run, focus the
+the fresh guest emits `F`. Select **Guest-controlled segments** to run a guest
+that loads DS and ES and emits `V`. Select **Keyboard echo diagnostic**, Run, focus the
 display and type printable ASCII; the guest reads the keyboard and writes text
 memory. Select **Disk diagnostic** and
 Run to read, modify and reread a synthetic disk byte through guest instructions.

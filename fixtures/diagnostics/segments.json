@@ -1,0 +1,26 @@
+{
+  "id": "segment-selection-v1",
+  "profile": "diagnostic-segments-v1",
+  "license": "Apache-2.0",
+  "origin": "Original program authored for QSOLKCB/486; no imported bytes",
+  "entry": {"cs":0,"ip":31744,"ds":0,"es":0,"ss":0,"sp":0,"flags":2},
+  "source": [
+    "mov dx,00e9h; mov ax,1000h; mov ds,ax; mov ax,2000h; mov es,ax",
+    "mov bx,0100h; mov bp,0100h; mov al,03h; mov [bp+0],al (SS)",
+    "mov al,[bx] (DS); add al,es:[bx]; add al,[bp+0] (SS); add al,ds:[bp+0]",
+    "mov es:[bx+1],al; call save_restore; out dx,al; hlt",
+    "save_restore: es: push bx; mov bx,1234h; ds: pop bx; ret (all use SS for stack)",
+    "initial DS:0100=21h; ES:0100=11h; 3000:0100=77h; zeros elsewhere in the image"
+  ],
+  "recipe": "Node 24.22.1: import makeSegmentProgram from segments.mjs and write its returned bytes unchanged. It places the explicitly listed instruction encodings at image offset zero, zero-fills through physical 30100h, and inserts the documented data bytes at physical 10100h, 20100h and 30100h. The direct loader maps byte zero to 0000:7c00; there is no assembler or external asset.",
+  "length": 165121,
+  "sha256": "32b6318b9b1beba580d72d2778cb93d69351b8adc3ee5dd937b947fa16d39203",
+  "expected": {
+    "registersHex": {"ax":"2056","bx":"0100","cx":"0000","dx":"00e9","si":"0000","di":"0000","bp":"0100","sp":"0000","cs":"0000","ds":"1000","es":"2000","ss":"0000","ip":"7c2d","flags":"0006"},
+    "portE9Hex":"56",
+    "memoryHex": {"0000:0100":"03", "1000:0100":"21", "2000:0100":"11", "2000:0101":"56", "3000:0100":"77", "0000:fffc..ffff":"00012b7c"},
+    "retiredInstructions":21,
+    "outcome":"halted",
+    "mutations":"Replacing ES:0100 with 12h changes the output from 56h (V) to 57h (W). Changing 3000:0100 alone does not change the output."
+  }
+}

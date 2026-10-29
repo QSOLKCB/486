@@ -10,6 +10,7 @@ scheduling tick, not a hardware cycle.
 |---|---|---|
 | `diagnostic-real-v1` | 2 MiB RAM, A20 enabled, `0000:7c00` loader; MOV DX/AL immediate, OUT DX,AL, HLT; lab port E9 | Original seven-byte guest emits `K` then halts; a changed immediate changes actual output. Unsupported encodings and unmapped accesses stop diagnostically. |
 | `diagnostic-compute-v1` | A bounded 8/16-bit arithmetic, 16-bit addressing and near-subroutine instruction slice | Original guest sums four data bytes via a loop and CALL/RET, preserving registers on the SS stack and emitting `F`. Mutating input changes the output. See the [exact matrix](COMPUTE_PROFILE.md). |
+| `diagnostic-segments-v1` | Adds guest DS/ES MOV and four segment overrides to the compute slice | Original guest loads DS and ES, uses DS, ES and SS, emits `V`; selected input mutation changes the output. [Exact encodings and diagnostic limits](SEGMENT_PROFILE.md). |
 | `diagnostic-text-v1` | Adds a limited instruction subset, 80×25 character/attribute RAM at B8000h, and lab keyboard ports | Original guest polls the FIFO and writes characters and attributes through executed instructions. Printable ASCII only. This is not VGA or an emulated PC keyboard controller. See [profile](TEXT_PROFILE.md). |
 | `diagnostic-disk-v1` | Adds lab disk ports, a synthetic 16-byte-sector image, staged overlay and explicit IndexedDB save/export | On a fresh test image the guest reads `A`, stages `Z`, rereads it and emits `AZ`; after committing, later runs read `Z` first. Node failure tests use a transactional test double; Chromium also passed an actual save, reload and export check. See [profile](DISK_PROFILE.md). |
 
@@ -33,3 +34,9 @@ The compute profile is a new opt-in slice and does not expand the historical pro
 Its tested boundaries, unsupported forms and optional independent host-x86 oracle are
 described in [COMPUTE_PROFILE.md](COMPUTE_PROFILE.md) and
 [the oracle recipe](../tools/native-oracle/README.md).
+
+The segment profile uses independent fixed address vectors in executor tests;
+these vectors do not import CPU decoding helpers. Its existing inherited
+sequential-IP wrap is a lab convention and differs from the documented 486
+segment-limit fault. Full exception delivery and complete 486 behavior remain
+unimplemented; see [SEGMENT_PROFILE.md](SEGMENT_PROFILE.md).

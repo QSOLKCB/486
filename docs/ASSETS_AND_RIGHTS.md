@@ -43,3 +43,10 @@ versioned JSON receipt. Browser monospace rendering uses the user's available fo
 Apache-2.0. The 132-byte direct-loaded guest is assembled from explicit encodings
 without external code or assets; the receipt records its source, recipe, SHA-256,
 initial state and expected observations.
+
+## Original segment diagnostic
+
+`fixtures/diagnostics/segments.mjs` and `segments.json` are project-authored under
+Apache-2.0. The zero-padded direct-loaded image is made from explicit original
+encodings and data, without imported ROMs or external assets. Its receipt records
+source, recipe, length, hash, initial state and expected guest observations.

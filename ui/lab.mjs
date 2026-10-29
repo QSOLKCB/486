@@ -4,6 +4,7 @@ import {attachKeyboard, keyboardEvent} from '../devices/keyboard.mjs';
 import {echoProgram} from '../fixtures/diagnostics/echo.mjs';
 import {diskGuest} from '../fixtures/diagnostics/disk.mjs';
 import {makeComputeProgram, computeRegisters} from '../fixtures/diagnostics/compute.mjs';
+import {makeSegmentProgram} from '../fixtures/diagnostics/segments.mjs';
 import {makeLabDisk} from '../fixtures/disks/lab-disk.mjs';
 import {DiskSession, DISK_PORTS, validateBase} from '../devices/disk.mjs';
 import {IndexedDBOverlayStore} from '../storage/indexeddb.mjs';
@@ -42,7 +43,7 @@ async function newMachine() {
   if(disk) await disk.reset();
   if(request!==epoch) return;
   const selected=$('program').value;
-  const options = selected==='compute' ? {program:makeComputeProgram(),profile:'diagnostic-compute-v1',registers:computeRegisters} : selected==='text' ? {program:echoProgram,profile:'diagnostic-text-v1',registers:{ds:0xb800},setupBus:attachKeyboard,onEvent:keyboardEvent} : selected==='disk' ? {program:diskGuest,profile:'diagnostic-disk-v1',setupBus(bus){if(disk) for(const port of DISK_PORTS)bus.registerPort(port,disk.device);}} : {program:hello};
+  const options = selected==='segments' ? {program:makeSegmentProgram(),profile:'diagnostic-segments-v1'} : selected==='compute' ? {program:makeComputeProgram(),profile:'diagnostic-compute-v1',registers:computeRegisters} : selected==='text' ? {program:echoProgram,profile:'diagnostic-text-v1',registers:{ds:0xb800},setupBus:attachKeyboard,onEvent:keyboardEvent} : selected==='disk' ? {program:diskGuest,profile:'diagnostic-disk-v1',setupBus(bus){if(disk) for(const port of DISK_PORTS)bus.registerPort(port,disk.device);}} : {program:hello};
   machine=new Machine(options); transitioning=false; render();
  } catch(error) {
   if(request===epoch) {transitioning=true;render();$('reason').textContent=`Reset failed: ${error.message}`;}

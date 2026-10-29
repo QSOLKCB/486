@@ -1,6 +1,8 @@
 // Apache-2.0. Bounded direct-loader real-mode computation profile.
 import { PlatformAccess } from '../bus/bus.mjs';
 const CF=1, PF=4, AF=16, ZF=64, SF=128, OF=2048;
+class DecodeLimit extends Error {}
+const segmentPrefixes = new Map([[0x26,'es'],[0x2e,'cs'],[0x36,'ss'],[0x3e,'ds']]);
 const flag=(f,bit,on)=>on ? f|bit : f&~bit;
 const wordRegs=['ax','cx','dx','bx','sp','bp','si','di'];
 const byteRegs=['ax','cx','dx','bx','ax','cx','dx','bx'];
@@ -30,7 +32,9 @@ export function stepCompute(cpu) {
   const trace={profile:cpu.profile,start,bytes};
   if(cpu.halted) return {status:'halted',retired:false,trace,reason:'CPU halted'};
   let cursor=r.ip, wrapped=false;
-  const fetch=()=>{if(wrapped)throw new PlatformAccess('instruction crosses the 16-bit code segment boundary');if(bytes.length>=15)throw new Error('decoder budget exceeded');const v=bus.read8(bus.address(r.cs,cursor));bytes.push(v);wrapped=cursor===0xffff;cursor=(cursor+1)&0xffff;return v;};
+  const segmented=cpu.profile==='diagnostic-segments-v1';
+  let segmentOverride=null;
+  const fetch=()=>{if(wrapped)throw new PlatformAccess('instruction crosses the 16-bit code segment boundary');if(bytes.length>=15){if(segmented)throw new DecodeLimit('instruction exceeds 15-byte decoder limit');throw new Error('decoder budget exceeded');}const v=bus.read8(bus.address(r.cs,cursor));bytes.push(v);wrapped=cursor===0xffff;cursor=(cursor+1)&0xffff;return v;};
   const word=()=>{const lo=fetch();return lo|(fetch()<<8);};
   const signed8=x=>x<0x80?x:x-0x100;
   const signed16=x=>x<0x8000?x:x-0x10000;
@@ -54,7 +58,7 @@ export function stepCompute(cpu) {
       off=sums[rm]();usesBP=rm===2||rm===3||rm===6;
       if(mod===1)off+=signed8(fetch());else if(mod===2)off+=word();
     }
-    off&=0xffff; const seg=usesBP?r.ss:r.ds;
+    off&=0xffff; const seg=segmentOverride ? r[segmentOverride] : usesBP?r.ss:r.ds;
     return {reg,operand:{read:()=>readMem(seg,off,width),write:v=>writeMem(seg,off,width,v)}};
   }
   function condition(cc) {
@@ -62,8 +66,18 @@ export function stepCompute(cpu) {
     return [o,!o,c,!c,z,!z,c||z,!c&&!z,s,!s,p,!p,s!==o,s===o,z||(s!==o),!z&&(s===o)][cc];
   }
   try {
-    const op=fetch();let action,mnemonic;
+    let op=fetch(),prefixCount=0;
+    if(segmented) {
+      while(segmentPrefixes.has(op)) {
+        prefixCount++;
+        if(prefixCount===1) segmentOverride=segmentPrefixes.get(op);
+        op=fetch();
+      }
+      if(prefixCount>1)return unsupported('multiple segment override prefixes are unsupported');
+    }
+    let action,mnemonic;
     if(op>=0xb0&&op<=0xbf){const width=op<0xb8?8:16,id=op&7,v=width===8?fetch():word();mnemonic=`MOV r${width}, imm${width}`;action=()=>setReg(r,id,width,v);}
+    else if(segmented&&(op===0x8e||op===0x8c)){const d=modrm(16),segment=d.reg===0?'es':d.reg===3?'ds':null;if(!segment)return unsupported('unsupported segment register selector');mnemonic=op===0x8e?`MOV ${segment.toUpperCase()}, r/m16`:`MOV r/m16, ${segment.toUpperCase()}`;action=()=>{if(op===0x8e)r[segment]=d.operand.read();else d.operand.write(r[segment]);};}
     else if(op>=0x88&&op<=0x8b){const width=(op&1)?16:8,toReg=!!(op&2),d=modrm(width);mnemonic=`MOV r/m${width}, r${width}`;action=()=>{if(toReg)setReg(r,d.reg,width,d.operand.read());else d.operand.write(getReg(r,d.reg,width));};}
     else if((op>=0x00&&op<=0x03)||(op>=0x28&&op<=0x2b)||(op>=0x38&&op<=0x3b)){
       const width=(op&1)?16:8,toReg=!!(op&2),kind=op<4?'add':op<0x38?'sub':'cmp',d=modrm(width);
@@ -84,5 +98,5 @@ export function stepCompute(cpu) {
     else return unsupported(`unsupported opcode 0x${op.toString(16).padStart(2,'0')}`);
     trace.mnemonic=mnemonic;action();r.ip=cursor;
     return {status:cpu.halted?'halted':'retired',retired:true,trace,reason:cpu.halted?'HLT executed':null};
-  } catch(error) {if(error instanceof PlatformAccess)return {status:'unsupported-platform-access',retired:false,trace,reason:error.message};throw error;}
+  } catch(error) {if(error instanceof DecodeLimit)return unsupported(error.message);if(error instanceof PlatformAccess)return {status:'unsupported-platform-access',retired:false,trace,reason:error.message};throw error;}
 }
