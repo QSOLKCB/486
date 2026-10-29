@@ -28,3 +28,20 @@ recommendation to disable sandboxing on a normal desktop. Firefox was not tested
 The script verifies guest outputs including the compute and segmentation guests, controls, focus and repeated input, disk
 persistence and export, malformed and same-name imports, and page/console errors.
 It does not prove complete x86, PC or browser compatibility.
+
+For a staged Pages artifact, copy this script into its `scripts/` directory for
+verification only and set `CHECK_RENDERED_DOCS=1`. The check additionally opens
+Support, follows a rendered profile link and returns to the lab under `/486/`.
+The test script itself is not included in the published artifact.
+
+## Rendered Pages documentation
+
+The manual Pages job stages the static files and runs
+`node scripts/render-pages.mjs _site` with Node 24.22.1. The renderer uses the
+vendored build-only Marked parser; its provenance is recorded in
+[the parser receipt](../tools/marked/README.md). The unbuilt checkout keeps its
+Markdown documentation and Support link unchanged. To check the rendered site,
+serve the staged tree under `/486/` and run the optional browser check against
+that tree with `CHECK_RENDERED_DOCS=1`; the check verifies Support and a profile
+link render as HTML and return to the lab. Its test script is tooling, not part
+of the published artifact.
