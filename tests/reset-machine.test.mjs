@@ -38,3 +38,18 @@ test('reset profile enforces its image and loader boundary', () => {
   assert.throws(()=>new Machine({profile:'i486-reset-v1',rom:resetRom(),registers:{ip:0}}),/overrides/);
   assert.throws(()=>new Machine({program:new Uint8Array(),rom:resetRom()}),/ROM/);
 });
+
+test('Buffer ROM input cannot change execution now or after reset', () => {
+  const backing=Buffer.alloc(0x10002);
+  backing.set(resetRom(),1);
+  const rom=backing.subarray(1,0x10001);
+  const machine=new Machine({profile:'i486-reset-v1',rom});
+  backing[0xfff1]=0xf4;
+  let first=machine.step();
+  assert.deepEqual(first.trace.bytes,[0xea,0,0,0,0xf0]);
+  assert.equal(first.status,'retired');
+  machine.reset();
+  first=machine.step();
+  assert.deepEqual(first.trace.bytes,[0xea,0,0,0,0xf0]);
+  assert.equal(first.status,'retired');
+});

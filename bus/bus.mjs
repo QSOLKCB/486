@@ -24,7 +24,7 @@ export class Bus {
     const end = start + bytes.length;
     if (end > 0x100000000) throw new RangeError('ROM extends beyond physical address space');
     if (this.#roms.some(rom => start < rom.end && rom.start < end)) throw new Error('ROM regions overlap');
-    this.#roms.push({start, end, bytes: bytes.slice()});
+    this.#roms.push({start, end, bytes: new Uint8Array(bytes)});
   }
   #romAt(address) { return this.#roms.find(rom => address >= rom.start && address < rom.end); }
   index(address) {

@@ -8,7 +8,7 @@ export class Machine {
     if (profile === 'i486-reset-v1') {
       if (!(rom instanceof Uint8Array) || rom.length !== 0x10000) throw new RangeError('reset ROM must be exactly 65536 bytes');
       if (program !== undefined || Object.keys(registers).length) throw new TypeError('reset profile does not accept a direct-loader program or register overrides');
-      this.#rom = rom.slice();
+      this.#rom = new Uint8Array(rom);
     } else {
       if (!(program instanceof Uint8Array)) throw new TypeError('program must be Uint8Array');
       if (rom !== undefined) throw new TypeError('ROM is not supported by this profile');

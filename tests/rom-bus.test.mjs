@@ -20,6 +20,16 @@ test('sparse ROM aliases read identical copied bytes and block writes, including
   assert.throws(() => bus.read8(0xfffeffff), PlatformAccess);
 });
 
+test('ROM mapping copies a Buffer view instead of retaining its backing storage', () => {
+  const bus = new Bus({size: 32});
+  const backing = Buffer.from([0x99, 0xea, 0x12, 0x34, 0x88]);
+  const image = backing.subarray(1, 4);
+  bus.mapROM(100, image);
+  backing.fill(0);
+  assert.deepEqual([bus.read8(100), bus.read8(101), bus.read8(102)], [0xea, 0x12, 0x34]);
+  assert.throws(() => bus.write8(100, 0), PlatformAccess);
+});
+
 test('ROM mapping rejects invalid and overlapping ranges without modifying existing mappings', () => {
   const bus = new Bus({size: 32});
   bus.mapROM(100, Uint8Array.of(1, 2, 3));
