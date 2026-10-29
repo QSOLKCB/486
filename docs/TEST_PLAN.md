@@ -40,3 +40,21 @@ State commit/tree, profile, runner/browser versions, commands, passed/failed/unr
 fixture hashes and limitations. Check actual emulator imports when claiming emulator
 coverage. CI checks the PR commit/merge ref; report which was run. Never call manual
 inspection, fixture hashing or reference-unit coverage a successful boot.
+
+## Reference and push-check hardening
+
+`orderedEvents` snapshots an iterable once before validation and ordering, so a
+one-shot iterator is not exhausted during validation. The reference generation
+guard checks only at callback entry: await asynchronous work first, then guard a
+synchronous commit. It cannot cancel a callback that has already started.
+
+For push events CI checks both the net tree delta and each newly introduced commit
+against its first parent. A rewind therefore cannot silently restore whitespace;
+an intermediate bad commit is also checked even if a later commit fixes it. If
+the previous tip is missing (for example, a new branch or an unavailable
+force-push tip), CI checks the entire resulting tree against the empty tree. This
+fallback checks only the final snapshot; it cannot establish whether individual
+introduced commits are whitespace-free. Deleted refs skip the job. Pull requests
+continue to check their merge-ref delta. The commit list is streamed, avoiding
+Node's buffered-output limit. Each commit still requires a Git check, so very
+large ranges can exceed the workflow's five-minute timeout.

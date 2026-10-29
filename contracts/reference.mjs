@@ -44,14 +44,17 @@ export function ramIndex(address, length) {
   return address;
 }
 export function orderedEvents(events) {
+  const snapshot = [...events];
   const seen = new Set();
-  for (const { tick, sequence } of events) {
+  for (const { tick, sequence } of snapshot) {
     bounded(tick, Number.MAX_SAFE_INTEGER); bounded(sequence, Number.MAX_SAFE_INTEGER);
     if (seen.has(sequence)) throw new RangeError('duplicate event sequence');
     seen.add(sequence);
   }
-  return [...events].sort((a, b) => a.tick - b.tick || a.sequence - b.sequence);
+  return snapshot.sort((a, b) => a.tick - b.tick || a.sequence - b.sequence);
 }
+// Guard the synchronous state commit after awaiting, not an async operation that
+// continues after this check. A reset cannot cancel work already in progress.
 export function generationGuard() {
   let generation = 0n;
   return {
