@@ -42,7 +42,8 @@ jobs:
       id-token: write
     concurrency:
       group: github-pages
-      cancel-in-progress: false
+      # Keep queued manual deployments rather than replacing an earlier pending run.
+      queue: max
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -62,10 +63,29 @@ jobs:
             echo "current=false" >> "$GITHUB_OUTPUT"
             echo "::notice::Skipping outdated main commit ${GITHUB_SHA}."
           fi
+      - name: Check Pages publishing source
+        if: steps.head.outputs.current == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The Pages API schema permits build_type to be absent or null.
+          # In that case the API cannot confirm the setting; do not change it.
+          build_type="$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq 'if .build_type == null then "__not_reported__" elif .build_type == "workflow" then "workflow" elif .build_type == "legacy" then "legacy" else "__invalid__" end')"
+          case "$build_type" in
+            workflow) echo "Pages source is GitHub Actions." ;;
+            legacy) echo "::error::Set Settings > Pages > Source to GitHub Actions."; exit 1 ;;
+            __not_reported__) echo "::warning::Pages API did not report build_type; source could not be verified." ;;
+            *) echo "::error::Pages API returned an unexpected build_type."; exit 1 ;;
+          esac
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         if: steps.head.outputs.current == 'true'
         with:
           persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        if: steps.head.outputs.current == 'true'
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
       - name: Stage static application
         if: steps.head.outputs.current == 'true'
         run: |
@@ -74,6 +94,9 @@ jobs:
           cp -R ui cpu bus devices machine storage fixtures contracts docs _site/
           mkdir -p _site/tools
           cp -R tools/native-oracle _site/tools/
+          mkdir -p _site/tools/marked
+          cp tools/marked/README.md tools/marked/LICENSE.md _site/tools/marked/
+          node scripts/render-pages.mjs _site
       - name: Upload Pages artifact
         if: steps.head.outputs.current == 'true'
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
