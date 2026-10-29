@@ -70,7 +70,7 @@ jobs:
         run: |
           # The Pages API schema permits build_type to be absent or null.
           # In that case the API cannot confirm the setting; do not change it.
-          build_type="$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq 'if .build_type == null then "__not_reported__" elif .build_type == "workflow" then "workflow" elif .build_type == "legacy" then "legacy" else "__invalid__" end')"
+          build_type="$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq 'if .build_type == null then "__not_reported__" elif .build_type == "workflow" then "workflow" elif .build_type == "legacy" then "legacy" else "__invalid__" end')" || { echo "::error::Unable to read Pages settings; verify Pages access and Source in Settings > Pages."; exit 1; }
           case "$build_type" in
             workflow) echo "Pages source is GitHub Actions." ;;
             legacy) echo "::error::Set Settings > Pages > Source to GitHub Actions."; exit 1 ;;
