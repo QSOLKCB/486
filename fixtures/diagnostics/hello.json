@@ -1,0 +1,23 @@
+{
+  "id": "hello-e9-v1",
+  "license": "Apache-2.0",
+  "origin": "Original diagnostic authored for QSOLKCB/486; no imported bytes",
+  "profile": "diagnostic-real-v1",
+  "loadAddress": 31744,
+  "source": [
+    "mov dx, 0x00e9 ; BA E9 00",
+    "mov al, 0x4b ; B0 4B",
+    "out dx, al ; EE",
+    "hlt ; F4"
+  ],
+  "recipe": "Concatenate the explicit instruction encodings in source order. No assembler required.",
+  "hex": "bae900b04beef4",
+  "length": 7,
+  "sha256": "735724af2f7e2afbf8fecf9a739aa034f87e69b243ef3ee7a4f92fb5763bd4ab",
+  "expected": {
+    "port": 233,
+    "outputHex": "4b",
+    "retiredInstructions": 4,
+    "outcome": "halted"
+  }
+}
